@@ -51,12 +51,29 @@ async function main() {
   await sql`
     create table if not exists users (
       id         bigint generated always as identity primary key,
-      email      text        not null unique,
+      email      text        unique,
       name       text,
       created_at timestamptz not null default now()
     )
   `
-  console.log('✓ schema ready (titles, users)')
+  // ---- auth fields (v1.2.3) ----
+  await sql`alter table users add column if not exists display_name text`
+  await sql`alter table users add column if not exists identifier text`
+  await sql`alter table users add column if not exists password_hash text`
+  await sql`alter table users alter column email drop not null`
+  await sql`create unique index if not exists users_identifier_key on users (identifier)`
+
+  await sql`
+    create table if not exists sessions (
+      id         bigint generated always as identity primary key,
+      token_hash text        not null unique,
+      user_id    bigint      not null references users(id) on delete cascade,
+      created_at timestamptz not null default now(),
+      expires_at timestamptz not null
+    )
+  `
+  await sql`create index if not exists sessions_user_idx on sessions (user_id)`
+  console.log('✓ schema ready (titles, users + auth, sessions)')
 
   await sql`
     create table if not exists app_meta (
