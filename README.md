@@ -23,8 +23,8 @@ npm run preview
 
 ## نقشه راه
 
-- [ ] بک‌اند (Vercel Serverless Functions) + Neon PostgreSQL
+- [x] بک‌اند (Vercel Serverless Functions) + Neon PostgreSQL
 - [ ] احراز هویت و صفحه حساب
 - [ ] جستجو و صفحات فیلم/سریال
-- [ ] دیپلوی روی Vercel
-- [ ] خروجی APK با Capacitor از طریق GitHub Actions
+- [x] خط لولهٔ دیپلوی روی Vercel (GitHub Actions)
+- [x] خروجی APK با Capacitor از طریق GitHub Actions — راهنما: [DEPLOY.md](./DEPLOY.md)
