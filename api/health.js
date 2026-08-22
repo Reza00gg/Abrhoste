@@ -15,6 +15,13 @@ export default async function handler(req, res) {
   try {
     const rows = await db()`select 1 as up`
     payload.database = rows?.[0]?.up === 1 ? 'connected' : 'unexpected-response'
+    // نسخه‌ی آخر اپ از پایگاه داده — برای اعتبارسنجی کلاینت
+    try {
+      const meta = await db()`select value from app_meta where key = 'latest_app_version'`
+      if (meta?.[0]?.value) payload.latest_version = meta[0].value
+    } catch {
+      /* جدول هنوز ساخته نشده — مهم نیست */
+    }
   } catch (error) {
     payload.ok = false
     payload.database = 'error'

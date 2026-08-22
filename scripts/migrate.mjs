@@ -4,6 +4,9 @@
  * Run:  DATABASE_URL='postgres://...' node scripts/migrate.mjs
  */
 import { neon } from '@neondatabase/serverless'
+import { readFileSync } from 'node:fs'
+
+const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
 
 const url = process.env.DATABASE_URL
 if (!url) {
@@ -54,6 +57,20 @@ async function main() {
     )
   `
   console.log('✓ schema ready (titles, users)')
+
+  await sql`
+    create table if not exists app_meta (
+      key        text primary key,
+      value      text not null,
+      updated_at timestamptz not null default now()
+    )
+  `
+  // نسخه‌ی آخر اپ — منبع حقیقت برای اعتبارسنجی کلاینت‌ها
+  await sql`
+    insert into app_meta (key, value) values ('latest_app_version', ${pkg.version})
+    on conflict (key) do update set value = excluded.value, updated_at = now()
+  `
+  console.log(`✓ app_meta: latest_app_version = ${pkg.version}`)
 
   console.log('→ seeding…')
   for (const [slug, title, original, kind, year, rating] of seed) {

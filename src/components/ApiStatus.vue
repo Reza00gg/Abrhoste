@@ -1,15 +1,29 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { api } from '@/lib/api'
+import { CURRENT_VERSION, isNewer } from '@/lib/updater'
 
-const state = ref('loading') // loading | online | offline
+const state = ref('loading') // loading | online | outdated | offline
 const detail = ref('در حال بررسی…')
+
+const isNativeApp = !!window.Capacitor?.isNativePlatform?.()
 
 onMounted(async () => {
   try {
     const res = await api.health()
-    state.value = res.database === 'connected' ? 'online' : 'offline'
-    detail.value = res.database === 'connected' ? 'Neon متصل است' : 'پایگاه داده در دسترس نیست'
+    if (res.database !== 'connected') {
+      state.value = 'offline'
+      detail.value = 'پایگاه داده در دسترس نیست'
+      return
+    }
+    // اعتبارسنجی نسخه از سمت پایگاه داده (فقط داخل اپ)
+    if (isNativeApp && res.latest_version && isNewer(res.latest_version, CURRENT_VERSION)) {
+      state.value = 'outdated'
+      detail.value = 'نسخه قدیمی است'
+      return
+    }
+    state.value = 'online'
+    detail.value = 'Neon متصل است'
   } catch {
     state.value = 'offline'
     detail.value = 'سرویس در دسترس نیست'
@@ -26,6 +40,7 @@ onMounted(async () => {
       :class="{
         'animate-pulse bg-white/40': state === 'loading',
         'bg-emerald-400': state === 'online',
+        'animate-pulse bg-rose-500': state === 'outdated',
         'bg-rose-500': state === 'offline',
       }"
     />
