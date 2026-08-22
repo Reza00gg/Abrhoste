@@ -57,9 +57,13 @@ jobs:
               <color name="colorPrimary">#000000</color>
               <color name="colorPrimaryDark">#000000</color>
               <color name="colorAccent">#E11D48</color>
-              <color name="ic_launcher_background">#000000</color>
           </resources>
           XML
+          # Capacitor's template already defines ic_launcher_background — just recolor it
+          f=android/app/src/main/res/values/ic_launcher_background.xml
+          if [ -f "$f" ]; then
+            sed -i 's|<color name="ic_launcher_background">.*</color>|<color name="ic_launcher_background">#000000</color>|' "$f"
+          fi
 
       - name: Assemble debug APK
         run: |
