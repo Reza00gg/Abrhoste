@@ -1,0 +1,86 @@
+name: Deploy (Vercel + Neon)
+
+on:
+  push:
+    branches: [arena/01a02a25-abrhoste, main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  VERCEL_PROJECT_NAME: lenumoviz
+
+jobs:
+  deploy:
+    name: Migrate database & deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Guard — required secrets
+        run: |
+          [ -n "$VERCEL_TOKEN" ] || { echo "::error::VERCEL_TOKEN secret is missing"; exit 1; }
+          [ -n "${{ secrets.DATABASE_URL }}" ] || { echo "::error::DATABASE_URL secret is missing"; exit 1; }
+
+      - name: Run Neon migration & seed
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/migrate.mjs
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Link (or create) the Vercel project
+        run: |
+          vercel project add "$VERCEL_PROJECT_NAME" --token "$VERCEL_TOKEN" || true
+          vercel link --yes --project "$VERCEL_PROJECT_NAME" --token "$VERCEL_TOKEN"
+
+      - name: Sync DATABASE_URL to Vercel
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          for target in production preview development; do
+            vercel env rm DATABASE_URL "$target" --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+            printf '%s' "$DATABASE_URL" | vercel env add DATABASE_URL "$target" --token "$VERCEL_TOKEN"
+          done
+
+      - name: Pull production environment
+        run: vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
+
+      - name: Build
+        run: vercel build --prod --token "$VERCEL_TOKEN"
+
+      - name: Deploy to production
+        id: deploy
+        run: |
+          url="$(vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN")"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "### 🚀 Deployed" >> "$GITHUB_STEP_SUMMARY"
+          echo "$url" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Smoke test the API
+        run: |
+          url="${{ steps.deploy.outputs.url }}"
+          echo "Checking $url/api/health"
+          for i in 1 2 3 4 5; do
+            code="$(curl -s -o /tmp/health.json -w '%{http_code}' "$url/api/health" || true)"
+            [ "$code" = "200" ] && break
+            sleep 6
+          done
+          cat /tmp/health.json; echo
+          [ "$code" = "200" ] || { echo "::error::health check failed with $code"; exit 1; }
+          curl -s "$url/api/titles?limit=3" | head -c 600; echo

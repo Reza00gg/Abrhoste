@@ -1,0 +1,13 @@
+{
+  "appId": "app.lenumoviz.mobile",
+  "appName": "LenuMoviz",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#000000"
+  },
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {}
+}

@@ -14,5 +14,6 @@ defineProps({
       {{ title }}
     </h1>
     <p v-if="subtitle" class="mt-3 text-sm text-white/40">{{ subtitle }}</p>
+    <slot />
   </section>
 </template>
