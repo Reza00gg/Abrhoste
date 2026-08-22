@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { LogOut, UserRound } from 'lucide-vue-next'
 import TextField from '@/components/TextField.vue'
 import { auth, login, logout, register } from '@/lib/auth'
@@ -8,8 +8,6 @@ import { toast } from '@/lib/toast'
 const mode = ref('login') // login | register
 const busy = ref(false)
 const leaving = ref(false)
-const stage = ref('')
-let stageTimer = null
 
 const form = reactive({
   display_name: '',
@@ -42,47 +40,25 @@ function validate() {
   return null
 }
 
-const STAGES = ['در حال بررسی امنیتی…', 'هش‌سازی رمز عبور…', 'ساخت توکن امن…']
-const delay = (ms) => new Promise((r) => setTimeout(r, ms))
-
-function runStages() {
-  let i = 0
-  stage.value = STAGES[0]
-  stageTimer = setInterval(() => {
-    i = Math.min(i + 1, STAGES.length - 1)
-    stage.value = STAGES[i]
-  }, 900)
-}
-function stopStages() {
-  clearInterval(stageTimer)
-  stage.value = ''
-}
-onBeforeUnmount(stopStages)
-
 async function submit() {
   if (busy.value) return
   const err = validate()
   if (err) return toast(err)
 
   busy.value = true
-  runStages()
   try {
-    // مراحل امنیتی حس واقعی داشته باشند — حداقل زمان کنار درخواست واقعی
-    const work =
+    const u =
       mode.value === 'register'
-        ? register({ ...form })
-        : login({ identifier: form.identifier, password: form.password })
-    const [u] = await Promise.all([work, delay(2400)])
+        ? await register({ ...form })
+        : await login({ identifier: form.identifier, password: form.password })
     toast(
       mode.value === 'register' ? `خوش اومدی ${u.display_name} 🎉` : `خوش برگشتی ${u.display_name} 👋`,
       'success',
     )
     form.password = form.password_confirm = ''
   } catch (e) {
-    await delay(300)
     toast(e.message)
   } finally {
-    stopStages()
     busy.value = false
   }
 }
@@ -205,7 +181,7 @@ function switchMode(m) {
             v-if="busy"
             class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
           />
-          {{ busy ? stage : mode === 'login' ? 'ورود' : 'ساخت حساب' }}
+          {{ busy ? '' : mode === 'login' ? 'ورود' : 'ساخت حساب' }}
         </button>
       </form>
     </div>

@@ -1,11 +1,13 @@
 <script setup>
 import { CircleAlert, CircleCheck } from 'lucide-vue-next'
 import { toasts } from '@/lib/toast'
+import { keyboardOpen } from '@/lib/ui'
 </script>
 
 <template>
   <div
-    class="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] z-[120] flex flex-col items-center gap-2 px-6"
+    class="pointer-events-none fixed inset-x-0 z-[120] flex flex-col items-center gap-2 px-6 transition-[bottom] duration-200"
+    :class="keyboardOpen ? 'bottom-4' : 'bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))]'"
   >
     <TransitionGroup name="toast">
       <div
