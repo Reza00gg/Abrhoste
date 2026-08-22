@@ -1,9 +1,14 @@
 <script setup>
 import BottomNav from '@/components/BottomNav.vue'
+import AppSplash from '@/components/AppSplash.vue'
+
+// true only inside the Capacitor WebView (the APK) — never on the website
+const isNativeApp = !!window.Capacitor?.isNativePlatform?.()
 </script>
 
 <template>
   <div class="relative flex min-h-dvh flex-col bg-background text-foreground">
+    <AppSplash v-if="isNativeApp" />
     <!-- content -->
     <main class="flex-1 pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))] safe-t">
       <RouterView v-slot="{ Component, route }">

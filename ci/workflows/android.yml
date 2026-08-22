@@ -48,6 +48,16 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: App icon + native splash (from assets/)
+        run: npx --yes @capacitor/assets generate --android --assetPath assets
+
+      - name: Stamp version (name from package.json, code from run number)
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          sed -i "s/versionName \"1.0\"/versionName \"$VER\"/" android/app/build.gradle
+          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/" android/app/build.gradle
+          grep -E "versionName|versionCode" android/app/build.gradle
+
       - name: Force dark, edge-to-edge splash background
         run: |
           mkdir -p android/app/src/main/res/values
@@ -75,10 +85,12 @@ jobs:
         id: apk
         run: |
           src="android/app/build/outputs/apk/debug/app-debug.apk"
-          out="LenuMoviz-${GITHUB_SHA::7}.apk"
+          VER=$(node -p "require('./package.json').version")
+          out="LenuMoviz-v${VER}.apk"
           cp "$src" "$out"
           ls -lh "$out"
           echo "path=$out" >> "$GITHUB_OUTPUT"
+          echo "ver=$VER" >> "$GITHUB_OUTPUT"
           echo "### 📦 APK ready: \`$out\` ($(du -h "$out" | cut -f1))" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload APK artifact
@@ -92,8 +104,8 @@ jobs:
       - name: Publish a GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: apk-${{ github.run_number }}
-          name: LenuMoviz APK build ${{ github.run_number }}
+          tag_name: apk-v${{ steps.apk.outputs.ver }}-b${{ github.run_number }}
+          name: LenuMoviz v${{ steps.apk.outputs.ver }} (build ${{ github.run_number }})
           body: |
             Debug APK built from `${{ github.sha }}`.
             API base: `${{ inputs.api_base || vars.API_BASE || '(same origin — web only)' }}`
