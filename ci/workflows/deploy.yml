@@ -74,7 +74,9 @@ jobs:
 
       - name: Smoke test the API
         run: |
-          url="${{ steps.deploy.outputs.url }}"
+          # test the stable production alias — the raw deployment URL sits behind
+          # Vercel Deployment Protection and answers 302
+          url="https://lenumoviz.vercel.app"
           echo "Checking $url/api/health"
           for i in 1 2 3 4 5; do
             code="$(curl -s -o /tmp/health.json -w '%{http_code}' "$url/api/health" || true)"
