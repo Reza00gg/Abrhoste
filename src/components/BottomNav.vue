@@ -1,14 +1,15 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { Home, Search, User } from 'lucide-vue-next'
 import { cn } from '@/lib/utils'
+import { initUiState, keyboardOpen } from '@/lib/ui'
 
 /**
  * Bottom navigation — RTL order (right → left): خانه، جستجو، حساب
  * - v-wave ripple fills the whole cell; held ripples stay until release.
- * - When the keyboard opens the bar slides away cleanly (no floating above it).
- * - Icons: constant stroke, no transforms — crisp at every state.
+ * - Vanishes instantly (v-show, no transition) the moment a field is focused,
+ *   so it never rides up with the keyboard — not even for a frame.
  */
 const items = [
   { name: 'home', label: 'خانه', icon: Home },
@@ -22,27 +23,13 @@ const activeIndex = computed(() => {
   return i === -1 ? 0 : i
 })
 
-/* --- keyboard detection: viewport shrinks → hide the bar --- */
-const keyboardOpen = ref(false)
-const baseHeight = Math.max(window.innerHeight, window.visualViewport?.height ?? 0)
-function onViewportResize() {
-  const h = window.visualViewport?.height ?? window.innerHeight
-  keyboardOpen.value = h < baseHeight - 150
-}
-onMounted(() => {
-  window.visualViewport?.addEventListener('resize', onViewportResize)
-  window.addEventListener('resize', onViewportResize)
-})
-onBeforeUnmount(() => {
-  window.visualViewport?.removeEventListener('resize', onViewportResize)
-  window.removeEventListener('resize', onViewportResize)
-})
+initUiState()
 </script>
 
 <template>
   <nav
-    class="fixed inset-x-0 bottom-0 z-50 safe-b border-t border-white/8 bg-black/80 backdrop-blur-xl backdrop-saturate-150 transition-transform duration-250 ease-out"
-    :class="keyboardOpen ? 'translate-y-full' : 'translate-y-0'"
+    v-show="!keyboardOpen"
+    class="fixed inset-x-0 bottom-0 z-50 safe-b border-t border-white/8 bg-black/80 backdrop-blur-xl backdrop-saturate-150"
     aria-label="ناوبری اصلی"
   >
     <ul class="mx-auto flex max-w-md items-stretch justify-around">
