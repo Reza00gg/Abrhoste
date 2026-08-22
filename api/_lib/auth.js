@@ -6,19 +6,31 @@
 import { randomBytes, scryptSync, timingSafeEqual, createHash } from 'node:crypto'
 import { db } from './db.js'
 
-const SCRYPT = { N: 16384, r: 8, p: 1 }
+const SCRYPT_LEGACY = { N: 16384, r: 8, p: 1 }
+// v1.2.4+ — دو برابر سنگین‌تر؛ پارامترها داخل هش ذخیره می‌شوند
+const SCRYPT = { N: 32768, r: 8, p: 1 }
 const SESSION_DAYS = 60
 
 export function hashPassword(password) {
   const salt = randomBytes(16).toString('hex')
-  const hash = scryptSync(password, salt, 64, SCRYPT).toString('hex')
-  return `s2$${salt}$${hash}`
+  const hash = scryptSync(password, salt, 64, { ...SCRYPT, maxmem: 128 * SCRYPT.N * SCRYPT.r * 2 }).toString('hex')
+  return `s3$${SCRYPT.N}$${salt}$${hash}`
 }
 
 export function verifyPassword(password, stored) {
   try {
-    const [, salt, hash] = String(stored).split('$')
-    const calc = scryptSync(password, salt, 64, SCRYPT)
+    const parts = String(stored).split('$')
+    let salt, hash, params
+    if (parts[0] === 's3') {
+      const N = Number(parts[1])
+      ;[, , salt, hash] = parts
+      params = { N, r: 8, p: 1, maxmem: 128 * N * 8 * 2 }
+    } else {
+      // s2 — هش‌های قدیمی
+      ;[, salt, hash] = parts
+      params = SCRYPT_LEGACY
+    }
+    const calc = scryptSync(password, salt, 64, params)
     return timingSafeEqual(Buffer.from(hash, 'hex'), calc)
   } catch {
     return false

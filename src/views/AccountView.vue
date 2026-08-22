@@ -1,12 +1,15 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { LogOut, UserRound } from 'lucide-vue-next'
+import TextField from '@/components/TextField.vue'
 import { auth, login, logout, register } from '@/lib/auth'
 import { toast } from '@/lib/toast'
 
 const mode = ref('login') // login | register
 const busy = ref(false)
 const leaving = ref(false)
+const stage = ref('')
+let stageTimer = null
 
 const form = reactive({
   display_name: '',
@@ -39,24 +42,47 @@ function validate() {
   return null
 }
 
+const STAGES = ['در حال بررسی امنیتی…', 'هش‌سازی رمز عبور…', 'ساخت توکن امن…']
+const delay = (ms) => new Promise((r) => setTimeout(r, ms))
+
+function runStages() {
+  let i = 0
+  stage.value = STAGES[0]
+  stageTimer = setInterval(() => {
+    i = Math.min(i + 1, STAGES.length - 1)
+    stage.value = STAGES[i]
+  }, 900)
+}
+function stopStages() {
+  clearInterval(stageTimer)
+  stage.value = ''
+}
+onBeforeUnmount(stopStages)
+
 async function submit() {
   if (busy.value) return
   const err = validate()
   if (err) return toast(err)
 
   busy.value = true
+  runStages()
   try {
-    if (mode.value === 'register') {
-      const u = await register({ ...form })
-      toast(`خوش اومدی ${u.display_name} 🎉`, 'success')
-    } else {
-      const u = await login({ identifier: form.identifier, password: form.password })
-      toast(`خوش برگشتی ${u.display_name} 👋`, 'success')
-    }
+    // مراحل امنیتی حس واقعی داشته باشند — حداقل زمان کنار درخواست واقعی
+    const work =
+      mode.value === 'register'
+        ? register({ ...form })
+        : login({ identifier: form.identifier, password: form.password })
+    const [u] = await Promise.all([work, delay(2400)])
+    toast(
+      mode.value === 'register' ? `خوش اومدی ${u.display_name} 🎉` : `خوش برگشتی ${u.display_name} 👋`,
+      'success',
+    )
     form.password = form.password_confirm = ''
   } catch (e) {
+    await delay(300)
     toast(e.message)
   } finally {
+    stopStages()
     busy.value = false
   }
 }
@@ -73,19 +99,13 @@ function switchMode(m) {
   if (busy.value) return
   mode.value = m
 }
-
-const inputCls =
-  'h-12 w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm text-white ' +
-  'placeholder:text-white/25 outline-none transition-colors focus:border-[#e11d48]/70 focus:bg-white/[0.06]'
 </script>
 
 <template>
   <section class="mx-auto w-full max-w-md px-6 pt-10 pb-6">
     <!-- در حال بررسی نشست -->
     <div v-if="!auth.ready && !auth.user" class="flex flex-col items-center pt-[18vh]">
-      <span
-        class="h-7 w-7 animate-spin rounded-full border-2 border-white/15 border-t-[#e11d48]"
-      />
+      <span class="h-7 w-7 animate-spin rounded-full border-2 border-white/15 border-t-[#e11d48]" />
       <p class="mt-4 text-xs text-white/35">در حال بررسی حساب…</p>
     </div>
 
@@ -145,56 +165,47 @@ const inputCls =
         </button>
       </div>
 
-      <form class="mt-5 flex flex-col gap-3" @submit.prevent="submit">
-        <input
+      <form class="mt-6 flex flex-col gap-4" @submit.prevent="submit">
+        <TextField
           v-if="mode === 'register'"
           v-model="form.display_name"
-          type="text"
-          placeholder="نام نمایشی"
+          label="نام نمایشی"
           autocomplete="nickname"
-          :class="inputCls"
         />
-        <input
+        <TextField
           v-model="form.identifier"
-          type="text"
-          placeholder="ایمیل یا شماره موبایل"
+          label="ایمیل یا شماره موبایل"
+          dir="ltr"
           autocomplete="username"
           inputmode="email"
-          :class="inputCls"
-          class="text-left"
-          dir="ltr"
         />
-        <input
+        <TextField
           v-model="form.password"
+          label="رمز عبور"
           type="password"
-          placeholder="رمز عبور"
-          :autocomplete="mode === 'login' ? 'current-password' : 'new-password'"
-          :class="inputCls"
-          class="text-left"
           dir="ltr"
+          :autocomplete="mode === 'login' ? 'current-password' : 'new-password'"
         />
-        <input
+        <TextField
           v-if="mode === 'register'"
           v-model="form.password_confirm"
+          label="تکرار رمز عبور"
           type="password"
-          placeholder="تکرار رمز عبور"
-          autocomplete="new-password"
-          :class="inputCls"
-          class="text-left"
           dir="ltr"
+          autocomplete="new-password"
         />
 
         <button
           v-wave
           type="submit"
           :disabled="busy"
-          class="wave-host mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#e11d48] text-sm font-bold text-white transition-opacity disabled:opacity-50"
+          class="wave-host mt-1 flex h-12.5 w-full items-center justify-center gap-2.5 rounded-2xl bg-[#e11d48] text-sm font-bold text-white transition-opacity disabled:opacity-60"
         >
           <span
             v-if="busy"
             class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
           />
-          {{ busy ? '' : mode === 'login' ? 'ورود' : 'ساخت حساب' }}
+          {{ busy ? stage : mode === 'login' ? 'ورود' : 'ساخت حساب' }}
         </button>
       </form>
     </div>

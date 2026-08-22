@@ -63,18 +63,20 @@ const fmtSize = (b) => (b > 0 ? (b / 1048576).toFixed(1) + ' MB' : '')
       class="fixed inset-0 z-[90] flex items-end justify-center bg-black/70 backdrop-blur-sm"
     >
       <div
-        class="relative w-full max-w-md rounded-t-3xl border-t border-white/10 bg-[#131316] px-6 pt-6 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] text-center"
+        class="relative w-full max-w-md rounded-t-3xl border-t border-white/10 bg-[#131316] px-6 pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] text-center"
       >
-        <!-- close (hidden while busy) -->
-        <button
-          v-if="phase === 'idle' || phase === 'error'"
-          v-wave
-          class="wave-host absolute top-4 left-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/40"
-          aria-label="بستن"
-          @click="dismissed = true"
-        >
-          <X class="h-4.5 w-4.5" />
-        </button>
+        <!-- header row: close sits cleanly inside the sheet -->
+        <div class="mb-1 flex h-9 items-center justify-end">
+          <button
+            v-if="phase === 'idle' || phase === 'error'"
+            v-wave
+            class="wave-host flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] text-white/45"
+            aria-label="بستن"
+            @click="dismissed = true"
+          >
+            <X class="h-4.5 w-4.5" />
+          </button>
+        </div>
 
         <div class="mx-auto flex h-13 w-13 items-center justify-center rounded-2xl bg-[#e11d48]/15">
           <CloudDownload class="h-6.5 w-6.5 text-[#e11d48]" />

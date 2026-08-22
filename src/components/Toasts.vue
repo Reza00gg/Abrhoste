@@ -11,17 +11,12 @@ import { toasts } from '@/lib/toast'
       <div
         v-for="t in toasts"
         :key="t.id"
-        class="flex w-full max-w-sm items-center gap-2.5 rounded-2xl border px-4 py-3 text-[13px] font-medium shadow-2xl shadow-black/60 backdrop-blur-xl"
-        :class="
-          t.type === 'success'
-            ? 'border-emerald-500/20 bg-emerald-950/80 text-emerald-200'
-            : 'border-rose-500/20 bg-rose-950/80 text-rose-200'
-        "
+        class="flex w-full max-w-sm items-center gap-2.5 rounded-xl bg-[#232327] px-4 py-3 text-[13px] font-medium text-white/90 shadow-lg shadow-black/40"
       >
         <component
           :is="t.type === 'success' ? CircleCheck : CircleAlert"
           class="h-4.5 w-4.5 shrink-0"
-          :class="t.type === 'success' ? 'text-emerald-400' : 'text-rose-400'"
+          :class="t.type === 'success' ? 'text-emerald-400' : 'text-[#e11d48]'"
         />
         {{ t.message }}
       </div>
