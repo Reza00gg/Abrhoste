@@ -51,6 +51,50 @@ jobs:
       - name: App icon + native splash (from assets/)
         run: npx --yes @capacitor/assets generate --android --assetPath assets
 
+      - name: Allow in-app update installs
+        run: |
+          # REQUEST_INSTALL_PACKAGES so the app can hand the downloaded APK to the installer
+          m=android/app/src/main/AndroidManifest.xml
+          grep -q REQUEST_INSTALL_PACKAGES "$m" || \
+            sed -i 's|</manifest>|    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />\n</manifest>|' "$m"
+          grep INSTALL_PACKAGES "$m" || true
+
+      - name: Restore the release keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          [ -n "$KEYSTORE_B64" ] || { echo "::error::ANDROID_KEYSTORE_B64 secret is missing"; exit 1; }
+          printf '%s' "$KEYSTORE_B64" | base64 -d > android/app/lenumoviz.p12
+          ls -la android/app/lenumoviz.p12
+
+      - name: Wire signing + shrink into Gradle
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          cat >> android/app/build.gradle <<EOF
+
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file("lenumoviz.p12")
+                      storeType "pkcs12"
+                      storePassword "$KS_PASS"
+                      keyAlias "$KS_ALIAS"
+                      keyPassword "$KS_PASS"
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                      minifyEnabled true
+                      shrinkResources true
+                      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                  }
+              }
+          }
+          EOF
+
       - name: Stamp version (name from package.json, code from run number)
         run: |
           VER=$(node -p "require('./package.json').version")
@@ -75,16 +119,16 @@ jobs:
             sed -i 's|<color name="ic_launcher_background">.*</color>|<color name="ic_launcher_background">#000000</color>|' "$f"
           fi
 
-      - name: Assemble debug APK
+      - name: Assemble signed release APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Rename artifact
         id: apk
         run: |
-          src="android/app/build/outputs/apk/debug/app-debug.apk"
+          src="android/app/build/outputs/apk/release/app-release.apk"
           VER=$(node -p "require('./package.json').version")
           out="LenuMoviz-v${VER}.apk"
           cp "$src" "$out"
@@ -107,10 +151,13 @@ jobs:
           tag_name: apk-v${{ steps.apk.outputs.ver }}-b${{ github.run_number }}
           name: LenuMoviz v${{ steps.apk.outputs.ver }} (build ${{ github.run_number }})
           body: |
-            Debug APK built from `${{ github.sha }}`.
+            **Signed release APK** — built from `${{ github.sha }}`.
             API base: `${{ inputs.api_base || vars.API_BASE || '(same origin — web only)' }}`
+
+            - امضای ثابت: آپدیت مستقیم روی نسخه‌های قبلی نصب می‌شود (بدون حذف)
+            - بروزرسانی داخل برنامه: اپ خودش نسخه جدید را پیدا، دانلود و نصب می‌کند
 
             نصب: فایل APK را دانلود کن و روی گوشی نصب کن (نصب از منابع ناشناس را فعال کن).
           files: ${{ steps.apk.outputs.path }}
           draft: false
-          prerelease: true
+          prerelease: false
