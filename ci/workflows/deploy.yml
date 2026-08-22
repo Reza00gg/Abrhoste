@@ -55,7 +55,7 @@ jobs:
         run: |
           for target in production preview development; do
             vercel env rm DATABASE_URL "$target" --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
-            printf '%s' "$DATABASE_URL" | vercel env add DATABASE_URL "$target" --token "$VERCEL_TOKEN"
+            printf '%s' "$DATABASE_URL" | vercel env add DATABASE_URL "$target" --force --token "$VERCEL_TOKEN"
           done
 
       - name: Pull production environment
