@@ -7,6 +7,9 @@ import { onMounted, ref } from 'vue'
 
 const emit = defineEmits(['done'])
 
+// Vite define — must be bound in script so the template can see it
+const version = __APP_VERSION__
+
 const progress = ref(0)
 const leaving = ref(false)
 const gone = ref(false)
@@ -67,7 +70,7 @@ onMounted(() => {
 
     <!-- version -->
     <p class="absolute bottom-10 text-[11px] font-medium text-white/25" dir="ltr">
-      v{{ __APP_VERSION__ }}
+      v{{ version }}
     </p>
   </div>
 </template>

@@ -46,12 +46,11 @@ export async function checkForUpdate() {
 }
 
 /**
- * Download the APK natively with progress, then launch the installer.
- * onProgress receives 0..1.
+ * Download the APK natively with progress. Returns the local file path.
+ * onProgress receives 0..1. Installation is a separate, user-triggered step.
  */
-export async function downloadAndInstall(apkUrl, onProgress) {
+export async function downloadUpdate(apkUrl, onProgress) {
   const { Filesystem, Directory } = await import('@capacitor/filesystem')
-  const { FileOpener } = await import('@capacitor-community/file-opener')
 
   const listener = await Filesystem.addListener('progress', (p) => {
     if (p.contentLength > 0) onProgress(Math.min(1, p.bytes / p.contentLength))
@@ -65,11 +64,17 @@ export async function downloadAndInstall(apkUrl, onProgress) {
       progress: true,
     })
     onProgress(1)
-    await FileOpener.open({
-      filePath: path,
-      contentType: 'application/vnd.android.package-archive',
-    })
+    return path
   } finally {
     listener.remove()
   }
+}
+
+/** Hand the downloaded APK to Android's package installer. */
+export async function installUpdate(path) {
+  const { FileOpener } = await import('@capacitor-community/file-opener')
+  await FileOpener.open({
+    filePath: path,
+    contentType: 'application/vnd.android.package-archive',
+  })
 }

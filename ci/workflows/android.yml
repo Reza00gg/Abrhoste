@@ -59,6 +59,15 @@ jobs:
             sed -i 's|</manifest>|    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />\n</manifest>|' "$m"
           grep INSTALL_PACKAGES "$m" || true
 
+      - name: Keep launcher icons & splash out of the resource shrinker
+        run: |
+          mkdir -p android/app/src/main/res/raw
+          cat > android/app/src/main/res/raw/keep.xml <<'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources xmlns:tools="http://schemas.android.com/tools"
+              tools:keep="@mipmap/ic_launcher,@mipmap/ic_launcher_round,@mipmap/ic_launcher_foreground,@mipmap/ic_launcher_background,@drawable/splash,@drawable/ic_launcher_background,@drawable/ic_launcher_foreground" />
+          XML
+
       - name: Restore the release keystore
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
