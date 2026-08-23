@@ -70,7 +70,7 @@ const fmtSize = (b) => (b > 0 ? (b / 1048576).toFixed(1) + ' MB' : '')
           <button
             v-if="phase === 'idle' || phase === 'error'"
             v-wave
-            class="wave-host absolute right-6 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] text-white/45"
+            class="update-close wave-host absolute right-6 left-auto top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] text-white/45"
             aria-label="بستن"
             @click="dismissed = true"
           >
@@ -151,6 +151,13 @@ const fmtSize = (b) => (b > 0 ? (b / 1048576).toFixed(1) + ' MB' : '')
 </template>
 
 <style scoped>
+/* Physical right edge, independent of document RTL direction. */
+.update-close {
+  right: 1.5rem;
+  left: auto;
+  top: 0.75rem;
+}
+
 .sheet-enter-active,
 .sheet-leave-active {
   transition: opacity 0.3s ease;
