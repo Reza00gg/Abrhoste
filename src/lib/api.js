@@ -15,7 +15,7 @@ async function request(path, options = {}) {
 }
 
 export const api = {
-  health: () => request('/api/health'),
+  health: (options = {}) => request('/api/health', options),
   titles: (params = {}) => {
     const qs = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),

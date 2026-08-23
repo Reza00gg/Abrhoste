@@ -66,11 +66,11 @@ const fmtSize = (b) => (b > 0 ? (b / 1048576).toFixed(1) + ' MB' : '')
         class="relative w-full max-w-md rounded-t-3xl border-t border-white/10 bg-[#131316] px-6 pt-3 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] text-center"
       >
         <!-- header row: close sits cleanly inside the sheet -->
-        <div class="mb-1 flex h-9 items-center justify-end">
+        <div class="mb-1 flex h-9 items-center">
           <button
             v-if="phase === 'idle' || phase === 'error'"
             v-wave
-            class="wave-host flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] text-white/45"
+            class="wave-host absolute right-6 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.06] text-white/45"
             aria-label="بستن"
             @click="dismissed = true"
           >
