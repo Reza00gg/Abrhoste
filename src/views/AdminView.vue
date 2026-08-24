@@ -199,23 +199,23 @@ onMounted(async () => {
     </template>
 
     <template v-else>
-      <header class="border-b border-white/8 bg-black/80 px-5 py-3 backdrop-blur-xl">
-        <div class="relative mx-auto h-10 w-full items-center" dir="ltr">
-          <button v-wave type="button" class="wave-host absolute left-0 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl text-white/55 hover:bg-white/[0.06] hover:text-white" aria-label="خروج" @click="logout">
-            <LogOut class="h-5 w-5" />
+      <header class="admin-header">
+        <div class="admin-header__row">
+          <button v-wave type="button" class="admin-header__logout wave-host" aria-label="خروج" @click="logout">
+            <LogOut class="admin-header__icon" />
           </button>
-          <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center" dir="rtl">
-            <h1 class="text-base font-bold">پنل مدیریت</h1>
-            <p class="mt-1 text-[10px] text-white/35">ارسال و مدیریت اعلان‌ها</p>
+          <div class="admin-header__title" dir="rtl">
+            <h1>پنل مدیریت</h1>
+            <p>ارسال و مدیریت اعلان‌ها</p>
           </div>
-          <span class="absolute right-0 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl bg-[#e11d48]/15 text-[#e11d48]" aria-hidden="true"><Megaphone class="h-5 w-5" /></span>
+          <span class="admin-header__mark" aria-hidden="true"><Megaphone class="admin-header__icon" /></span>
         </div>
       </header>
 
       <main class="mx-auto w-full max-w-md px-5 pb-10 pt-6">
-        <button v-wave type="button" class="wave-host relative flex h-12 w-full items-center rounded-2xl bg-[#e11d48] px-4 text-right" @click="openCreate">
-          <span class="w-full pe-10"><strong class="block text-sm">ارسال اعلان</strong><small class="mt-0.5 block text-[10px] text-white/70">برای تمامی کاربران و اپلیکیشن</small></span>
-          <Send class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 opacity-80" />
+        <button v-wave type="button" class="admin-send-card wave-host" @click="openCreate">
+          <span class="admin-send-card__text"><strong>ارسال اعلان</strong><small>برای تمامی کاربران و اپلیکیشن</small></span>
+          <Send class="admin-send-card__icon" />
         </button>
 
         <div class="mt-8 flex items-center justify-between">
@@ -229,7 +229,7 @@ onMounted(async () => {
           <p class="mt-4 text-sm font-bold text-white/45">هنوز اعلانی ارسال نشده</p>
         </div>
         <div v-else class="mt-4 space-y-2">
-          <article v-for="item in items" :key="item.id" class="rounded-xl border border-white/8 bg-white/[0.035] p-3">
+          <article v-for="item in items" :key="item.id" class="admin-notification-card rounded-xl border border-white/8 bg-white/[0.035] p-3">
             <div class="flex items-start gap-2.5">
               <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#e11d48]/15 text-[#e11d48]"><Bell class="h-4 w-4" /></span>
               <div class="min-w-0 flex-1 text-right">
@@ -285,5 +285,127 @@ onMounted(async () => {
 .sheet-enter-from section,
 .sheet-leave-to section {
   transform: translateY(100%);
+}
+</style>
+
+<style scoped>
+.admin-header {
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  background: rgba(0, 0, 0, .82);
+  padding: .75rem 1.25rem;
+  backdrop-filter: blur(18px);
+}
+
+.admin-header__row {
+  position: relative;
+  width: 100%;
+  height: 40px;
+  direction: ltr;
+}
+
+.admin-header__logout,
+.admin-header__mark {
+  position: absolute;
+  top: 0;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 12px;
+}
+
+.admin-header__logout {
+  left: 0;
+  color: rgba(255, 255, 255, .58);
+  transition: background-color .2s ease, color .2s ease;
+}
+
+.admin-header__logout:hover {
+  background: rgba(255, 255, 255, .06);
+  color: #fff;
+}
+
+.admin-header__mark {
+  right: 0;
+  background: rgba(225, 29, 72, .15);
+  color: #e11d48;
+}
+
+.admin-header__title {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.admin-header__title h1 {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.admin-header__title p {
+  margin-top: .25rem;
+  color: rgba(255, 255, 255, .35);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.admin-header__icon {
+  width: 20px;
+  height: 20px;
+}
+
+.admin-send-card {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 48px;
+  align-items: center;
+  border-radius: 16px;
+  background: #e11d48;
+  padding: 0 1rem;
+  text-align: right;
+}
+
+.admin-send-card__text {
+  display: block;
+  width: 100%;
+  padding-right: 2.25rem;
+}
+
+.admin-send-card__text strong,
+.admin-send-card__text small {
+  display: block;
+}
+
+.admin-send-card__text strong {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.admin-send-card__text small {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, .70);
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.admin-send-card__icon {
+  position: absolute;
+  top: 50%;
+  left: 1rem;
+  width: 17px;
+  height: 17px;
+  transform: translateY(-50%);
+  opacity: .85;
+}
+
+.admin-notification-card p {
+  max-height: 3.25rem;
+  overflow: hidden;
 }
 </style>

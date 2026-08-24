@@ -3,25 +3,91 @@ import { ArrowRight, Bell } from 'lucide-vue-next'
 </script>
 
 <template>
-  <header
-    class="fixed inset-x-0 top-0 z-40 border-b border-white/8 bg-black/80 backdrop-blur-xl backdrop-saturate-150"
-    :style="{ paddingTop: 'env(safe-area-inset-top, 0px)' }"
-  >
-    <div class="relative flex h-14 w-full items-center justify-center px-4" dir="ltr">
+  <header class="notification-header">
+    <div class="notification-header__row">
       <RouterLink
         v-wave
         to="/"
-        class="wave-host absolute right-4 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
+        class="notification-header__back wave-host"
         aria-label="بازگشت"
       >
-        <ArrowRight class="h-[21px] w-[21px]" :stroke-width="2" />
+        <ArrowRight class="notification-header__icon" :stroke-width="2" />
       </RouterLink>
 
-      <span class="select-none text-[16px] font-bold tracking-tight text-white" dir="rtl">اعلان‌ها</span>
+      <span class="notification-header__title" dir="rtl">اعلان‌ها</span>
 
-      <span class="absolute left-4 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl text-[#e11d48]" aria-hidden="true">
-        <Bell class="h-[21px] w-[21px]" :stroke-width="2" />
+      <span class="notification-header__bell" aria-hidden="true">
+        <Bell class="notification-header__icon" :stroke-width="2" />
       </span>
     </div>
   </header>
 </template>
+
+<style scoped>
+.notification-header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  background: rgba(0, 0, 0, .80);
+  padding-top: env(safe-area-inset-top, 0px);
+  backdrop-filter: blur(18px) saturate(150%);
+}
+
+.notification-header__row {
+  position: relative;
+  width: 100%;
+  height: 56px;
+  direction: ltr;
+}
+
+.notification-header__back,
+.notification-header__bell {
+  position: absolute;
+  top: 8px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 12px;
+}
+
+.notification-header__back {
+  right: 16px;
+  left: auto;
+  color: rgba(255, 255, 255, .64);
+  transition: background-color .2s ease, color .2s ease;
+}
+
+.notification-header__back:hover {
+  background: rgba(255, 255, 255, .06);
+  color: #fff;
+}
+
+.notification-header__bell {
+  right: auto;
+  left: 16px;
+  color: #e11d48;
+}
+
+.notification-header__icon {
+  width: 22px;
+  height: 22px;
+}
+
+.notification-header__title {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: calc(100% - 180px);
+  overflow: hidden;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+</style>

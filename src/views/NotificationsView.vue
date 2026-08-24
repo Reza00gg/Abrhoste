@@ -1,6 +1,6 @@
 <script setup>
 import { Bell, CheckCheck, Loader2, RefreshCw } from 'lucide-vue-next'
-import { onBeforeUnmount, onMounted } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
 import {
   fetchNotifications,
   markNotificationRead,
@@ -15,16 +15,46 @@ function formatDate(value) {
   return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
 }
 
+let visibleObserver = null
+
+function observeVisibleNotifications() {
+  if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return
+  if (!visibleObserver) {
+    visibleObserver = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue
+        const id = Number(entry.target.getAttribute('data-leno-notification-id'))
+        markNotificationRead(id)
+        visibleObserver?.unobserve(entry.target)
+      }
+    }, { threshold: 0.6 })
+  }
+  document.querySelectorAll('[data-leno-notification-id]').forEach((element) => visibleObserver.observe(element))
+}
+
 async function refresh() {
   await fetchNotifications()
+  await nextTick()
+  observeVisibleNotifications()
 }
 
 onMounted(async () => {
   startNotificationPolling()
   await fetchNotifications()
+  await nextTick()
+  observeVisibleNotifications()
 })
 
-onBeforeUnmount(stopNotificationPolling)
+watch(() => notificationState.items.map((item) => item.id).join(','), async () => {
+  await nextTick()
+  observeVisibleNotifications()
+})
+
+onBeforeUnmount(() => {
+  visibleObserver?.disconnect()
+  visibleObserver = null
+  stopNotificationPolling()
+})
 </script>
 
 <template>
@@ -50,7 +80,7 @@ onBeforeUnmount(stopNotificationPolling)
     </div>
 
     <div v-else class="space-y-2.5">
-      <article v-for="item in notificationState.items" :key="item.id" class="rounded-xl border border-white/8 bg-white/[0.035] px-3.5 py-3" @click="markNotificationRead(item.id)">
+      <article v-for="item in notificationState.items" :key="item.id" :data-leno-notification-id="item.id" class="rounded-xl border border-white/8 bg-white/[0.035] px-3.5 py-3" @click="markNotificationRead(item.id)">
         <div class="flex items-start gap-2.5">
           <span class="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#e11d48]/15 text-[#e11d48]">
             <Bell class="h-4 w-4" />

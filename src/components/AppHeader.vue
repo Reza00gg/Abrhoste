@@ -20,41 +20,117 @@ onBeforeUnmount(stopNotificationPolling)
 </script>
 
 <template>
-  <header
-    class="fixed inset-x-0 top-0 z-40 border-b border-white/8 bg-black/80 backdrop-blur-xl backdrop-saturate-150"
-    :style="{ paddingTop: 'env(safe-area-inset-top, 0px)' }"
-  >
-    <div class="relative flex h-14 w-full items-center justify-center px-4" dir="ltr">
+  <header class="app-header">
+    <div class="app-header__row">
       <button
         v-wave
         type="button"
-        class="wave-host absolute right-4 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl text-white/55 transition-colors hover:bg-white/[0.06] hover:text-white"
+        class="app-header__action app-header__action--menu wave-host"
         aria-label="منو"
         @click="openMenu"
       >
-        <Menu class="h-[22px] w-[22px]" :stroke-width="2" />
+        <Menu class="app-header__icon" :stroke-width="2" />
       </button>
 
-      <RouterLink to="/" class="select-none text-[16px] font-bold tracking-tight text-white" dir="rtl">
-        لنوموییز
-      </RouterLink>
+      <RouterLink to="/" class="app-header__brand" dir="rtl">لنوموییز</RouterLink>
 
       <button
         v-wave
         type="button"
-        class="wave-host absolute left-4 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl text-white/55 transition-colors hover:bg-white/[0.06] hover:text-white"
+        class="app-header__action app-header__action--notifications wave-host"
         aria-label="اعلان‌ها"
         @click="openNotifications"
       >
-        <Bell class="h-[21px] w-[21px]" :stroke-width="2" />
-        <span
-          v-if="notificationState.unread > 0"
-          class="absolute left-1 top-1 grid min-h-4 min-w-4 place-items-center rounded-full bg-[#e11d48] px-1 text-[9px] font-bold leading-none text-white"
-          dir="rtl"
-        >
+        <Bell class="app-header__icon" :stroke-width="2" />
+        <span v-if="notificationState.unread > 0" class="app-header__badge" dir="rtl">
           {{ notificationState.unread > 99 ? '۹۹+' : notificationState.unread }}
         </span>
       </button>
     </div>
   </header>
 </template>
+
+<style scoped>
+.app-header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  background: rgba(0, 0, 0, .80);
+  padding-top: env(safe-area-inset-top, 0px);
+  backdrop-filter: blur(18px) saturate(150%);
+}
+
+.app-header__row {
+  position: relative;
+  width: 100%;
+  height: 56px;
+  direction: ltr;
+}
+
+.app-header__action {
+  position: absolute;
+  top: 8px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, .58);
+  transition: background-color .2s ease, color .2s ease;
+}
+
+.app-header__action:hover {
+  background: rgba(255, 255, 255, .06);
+  color: #fff;
+}
+
+.app-header__action--menu {
+  right: 16px;
+  left: auto;
+}
+
+.app-header__action--notifications {
+  right: auto;
+  left: 16px;
+}
+
+.app-header__icon {
+  width: 22px;
+  height: 22px;
+}
+
+.app-header__brand {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: calc(100% - 180px);
+  overflow: hidden;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  line-height: 1.2;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-header__badge {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  display: grid;
+  min-width: 16px;
+  height: 16px;
+  place-items: center;
+  border-radius: 999px;
+  background: #e11d48;
+  padding: 0 4px;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+</style>
