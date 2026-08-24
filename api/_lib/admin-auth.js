@@ -23,15 +23,19 @@ function cookies(req) {
   return out
 }
 
+function secureSuffix() {
+  return process.env.NODE_ENV === 'development' ? '' : '; Secure'
+}
+
 function setCookie(res, token) {
   res.setHeader(
     'Set-Cookie',
-    `${COOKIE}=${encodeURIComponent(token)}; Max-Age=${SESSION_SECONDS}; Path=/; HttpOnly; Secure; SameSite=Strict`,
+    `${COOKIE}=${encodeURIComponent(token)}; Max-Age=${SESSION_SECONDS}; Path=/; HttpOnly${secureSuffix()}; SameSite=Strict`,
   )
 }
 
 export function clearAdminCookie(res) {
-  res.setHeader('Set-Cookie', `${COOKIE}=; Max-Age=0; Path=/; HttpOnly; Secure; SameSite=Strict`)
+  res.setHeader('Set-Cookie', `${COOKIE}=; Max-Age=0; Path=/; HttpOnly${secureSuffix()}; SameSite=Strict`)
 }
 
 export async function adminFromRequest(req) {
