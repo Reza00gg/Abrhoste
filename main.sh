@@ -16,6 +16,51 @@ STAGE_DIR=""
 BACKUP_DIR=""
 HTTPS_READY=0
 
+package_manager_busy() {
+  local locks=(
+    /var/lib/dpkg/lock-frontend
+    /var/lib/dpkg/lock
+    /var/cache/apt/archives/lock
+  )
+  if command -v fuser >/dev/null 2>&1; then
+    fuser -s "${locks[@]}" 2>/dev/null
+    return $?
+  fi
+  pgrep -x apt-get >/dev/null 2>&1 || pgrep -x dpkg >/dev/null 2>&1
+}
+
+wait_for_package_manager() {
+  local attempt=0
+  while package_manager_busy; do
+    attempt=$((attempt + 1))
+    if (( attempt == 1 )); then
+      log "Another apt/dpkg process is active; waiting without touching the lock..."
+    fi
+    if (( attempt >= 180 )); then
+      die "apt/dpkg is still busy after 6 minutes. Do not remove the lock file; finish or stop the package operation from the VPS console, then rerun."
+    fi
+    sleep 2
+  done
+}
+
+apt_run() {
+  local attempt=1
+  local exit_code=0
+  while (( attempt <= 5 )); do
+    wait_for_package_manager
+    if apt-get "$@"; then
+      return 0
+    else
+      exit_code=$?
+    fi
+    if (( attempt == 5 )); then return "${exit_code}"; fi
+    warn "apt command failed (attempt ${attempt}/5); waiting and retrying safely..."
+    sleep 5
+    attempt=$((attempt + 1))
+  done
+  return "${exit_code}"
+}
+
 log() { printf '\n[%s] %s\n' "$(date '+%H:%M:%S')" "$*"; }
 warn() { printf '\n[WARN] %s\n' "$*" >&2; }
 die() { printf '\n[ERROR] %s\n' "$*" >&2; exit 1; }
@@ -77,8 +122,10 @@ fi
 log "Start"
 log "Installing required system packages..."
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -y
-apt-get install -y ca-certificates curl unzip nginx
+wait_for_package_manager
+dpkg --configure -a
+apt_run update
+apt_run install -y ca-certificates curl unzip nginx
 
 node_major=0
 if command -v node >/dev/null 2>&1; then
@@ -86,8 +133,9 @@ if command -v node >/dev/null 2>&1; then
 fi
 if (( node_major < 22 )); then
   log "Installing Node.js 22..."
+  wait_for_package_manager
   curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-  apt-get install -y nodejs
+  apt_run install -y nodejs
 fi
 command -v node >/dev/null 2>&1 || die "Node.js installation failed."
 command -v npm >/dev/null 2>&1 || die "npm installation failed."
@@ -194,7 +242,7 @@ if [[ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]]; then
 fi
 if [[ -n "${CERTBOT_EMAIL}" ]]; then
   log "Installing HTTPS certificate with Certbot..."
-  apt-get install -y certbot python3-certbot-nginx
+  apt_run install -y certbot python3-certbot-nginx
   if certbot --nginx --non-interactive --agree-tos --redirect --email "${CERTBOT_EMAIL}" -d "${DOMAIN}"; then
     HTTPS_READY=1
   else
