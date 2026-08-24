@@ -135,8 +135,11 @@ mv -- "${STAGE_DIR}" "${INSTALL_DIR}"
 STAGE_DIR=""
 cd "${INSTALL_DIR}"
 
-log "Installing npm dependencies..."
-npm ci --no-audit --no-fund
+log "Installing npm dependencies (including build tools)..."
+# NODE_ENV=production would omit Vite because it is a devDependency. Install
+# devDependencies explicitly for the build, then prune them after the build.
+env NODE_ENV=development npm_config_production=false npm ci --include=dev --no-audit --no-fund
+[[ -x "${INSTALL_DIR}/node_modules/.bin/vite" ]] || die "Vite was not installed; the build toolchain is incomplete."
 
 log "Applying Neon schema and admin seed..."
 set -a
@@ -148,6 +151,9 @@ npm run migrate
 log "Building production assets..."
 npm run build
 [[ -f "${INSTALL_DIR}/dist/index.html" ]] || die "Production build did not create dist/index.html."
+
+log "Removing build-only dependencies..."
+env NODE_ENV=production npm prune --omit=dev --no-audit --no-fund
 
 log "Installing and starting PM2..."
 command -v pm2 >/dev/null 2>&1 || npm install --global pm2 --no-audit --no-fund
