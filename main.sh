@@ -14,12 +14,18 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PAYLOAD_ARCHIVE="${PAYLOAD_ARCHIVE:-${SCRIPT_DIR}/lenumoviz-app.zip}"
 STAGE_DIR=""
 BACKUP_DIR=""
+HTTPS_READY=0
 
 log() { printf '\n[%s] %s\n' "$(date '+%H:%M:%S')" "$*"; }
 warn() { printf '\n[WARN] %s\n' "$*" >&2; }
 die() { printf '\n[ERROR] %s\n' "$*" >&2; exit 1; }
 cleanup() {
-  [[ -n "${STAGE_DIR}" && -d "${STAGE_DIR}" ]] && rm -rf -- "${STAGE_DIR}"
+  local exit_code=$?
+  trap - ERR
+  if [[ -n "${STAGE_DIR}" && -d "${STAGE_DIR}" ]]; then
+    rm -rf -- "${STAGE_DIR}"
+  fi
+  exit "${exit_code}"
 }
 trap cleanup EXIT
 trap 'die "Installation failed at line ${LINENO}. Check the message above."' ERR
@@ -174,11 +180,18 @@ nginx -t
 systemctl enable --now nginx
 systemctl reload nginx
 
+if [[ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]]; then
+  HTTPS_READY=1
+fi
 if [[ -n "${CERTBOT_EMAIL}" ]]; then
   log "Installing HTTPS certificate with Certbot..."
   apt-get install -y certbot python3-certbot-nginx
-  certbot --nginx --non-interactive --agree-tos --redirect --email "${CERTBOT_EMAIL}" -d "${DOMAIN}"
-else
+  if certbot --nginx --non-interactive --agree-tos --redirect --email "${CERTBOT_EMAIL}" -d "${DOMAIN}"; then
+    HTTPS_READY=1
+  else
+    warn "Certbot could not issue the certificate. The HTTP site is still available; fix DNS/ports and rerun."
+  fi
+elif (( HTTPS_READY == 0 )); then
   warn "CERTBOT_EMAIL is empty; HTTPS was not requested. Set it in ${ENV_FILE} and rerun for TLS."
 fi
 
@@ -194,5 +207,13 @@ done
 (( healthy == 1 )) || { pm2 logs "${APP_NAME}" --lines 40 --nostream || true; die "The local health check failed."; }
 
 log "Installation complete"
-printf '\nSite: https://%s\nAPI:  https://%s/api\nPM2:  pm2 status %s\nEnv:  %s\n' "${DOMAIN}" "${DOMAIN}" "${APP_NAME}" "${ENV_FILE}"
+if (( HTTPS_READY == 1 )); then
+  SITE_SCHEME="https"
+else
+  SITE_SCHEME="http"
+fi
+printf '\nSite: %s://%s\nAPI:  %s://%s/api\nPM2:  pm2 status %s\nEnv:  %s\n' "${SITE_SCHEME}" "${DOMAIN}" "${SITE_SCHEME}" "${DOMAIN}" "${APP_NAME}" "${ENV_FILE}"
+if (( HTTPS_READY == 0 )); then
+  printf 'HTTPS: not configured yet (set CERTBOT_EMAIL and rerun after DNS is ready)\n'
+fi
 if [[ -n "${BACKUP_DIR}" ]]; then printf 'Backup: %s\n' "${BACKUP_DIR}"; fi
