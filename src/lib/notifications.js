@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import { API_BASE } from '@/lib/api'
 
 const STORAGE_KEY = 'lenumoviz.notifications.lastSeenId'
 
@@ -32,7 +33,7 @@ export async function fetchNotifications({ silent = false } = {}) {
   if (!silent) notificationState.loading = true
   notificationState.error = ''
   try {
-    const response = await fetch('/api/notifications', { headers: { Accept: 'application/json' }, cache: 'no-store' })
+    const response = await fetch(`${API_BASE}/api/notifications`, { headers: { Accept: 'application/json' }, cache: 'no-store' })
     if (!response.ok) throw new Error('notifications_failed')
     const data = await response.json()
     const incoming = Array.isArray(data.items) ? data.items : []
