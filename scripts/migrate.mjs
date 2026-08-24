@@ -5,6 +5,7 @@
  */
 import { neon } from '@neondatabase/serverless'
 import { readFileSync } from 'node:fs'
+import { randomBytes, scryptSync } from 'node:crypto'
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
 
@@ -73,7 +74,67 @@ async function main() {
     )
   `
   await sql`create index if not exists sessions_user_idx on sessions (user_id)`
-  console.log('✓ schema ready (titles, users + auth, sessions)')
+
+  // Public announcements are global rows; clients poll this small table for live updates.
+  await sql`
+    create table if not exists notifications (
+      id         bigint generated always as identity primary key,
+      title      text        not null,
+      message    text        not null,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    )
+  `
+  await sql`create index if not exists notifications_created_idx on notifications (created_at desc)`
+
+  // Admin access is independent from website users and uses opaque server sessions.
+  await sql`
+    create table if not exists admin_users (
+      id         bigint generated always as identity primary key,
+      username   text        not null unique,
+      password_hash text      not null,
+      role       text        not null default 'owner',
+      active     boolean     not null default true,
+      last_login_at timestamptz,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    )
+  `
+  await sql`
+    create table if not exists admin_sessions (
+      id         bigint generated always as identity primary key,
+      token_hash text        not null unique,
+      admin_id   bigint      not null references admin_users(id) on delete cascade,
+      created_at timestamptz not null default now(),
+      expires_at timestamptz not null
+    )
+  `
+  await sql`create index if not exists admin_sessions_admin_idx on admin_sessions (admin_id)`
+  await sql`
+    create table if not exists admin_login_attempts (
+      identifier       text primary key,
+      failures         integer     not null default 0,
+      window_started_at timestamptz not null default now(),
+      blocked_until    timestamptz,
+      updated_at       timestamptz not null default now()
+    )
+  `
+
+  const adminUsername = String(process.env.ADMIN_USERNAME || '').trim().toLowerCase()
+  const adminPassword = String(process.env.ADMIN_PASSWORD || '')
+  if (adminUsername && adminPassword) {
+    const salt = randomBytes(16).toString('hex')
+    const hash = scryptSync(adminPassword, salt, 64, { N: 32768, r: 8, p: 1, maxmem: 128 * 1024 * 1024 }).toString('hex')
+    const passwordHash = `s3$32768$${salt}$${hash}`
+    await sql`
+      insert into admin_users (username, password_hash, role, active)
+      values (${adminUsername}, ${passwordHash}, 'owner', true)
+      on conflict (username) do update
+        set password_hash = excluded.password_hash, active = true, updated_at = now()
+    `
+    console.log('✓ admin seed: active')
+  }
+  console.log('✓ schema ready (titles, users + auth, sessions, notifications, admin auth)')
 
   await sql`
     create table if not exists app_meta (

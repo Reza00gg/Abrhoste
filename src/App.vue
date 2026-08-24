@@ -1,12 +1,17 @@
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import AppHeader from '@/components/AppHeader.vue'
 import BottomNav from '@/components/BottomNav.vue'
 import AppSplash from '@/components/AppSplash.vue'
 import UpdateGate from '@/components/UpdateGate.vue'
 import Toasts from '@/components/Toasts.vue'
 import { initAuth } from '@/lib/auth'
 
-// true only inside the Capacitor WebView (the APK) — never on the website
+// true only inside the Capacitor WebView (never on the website)
 const isNativeApp = !!window.Capacitor?.isNativePlatform?.()
+const route = useRoute()
+const isAdminRoute = computed(() => route.name === 'admin')
 
 // بازیابی بی‌صدای نشست — برنامه باز شد، حساب همون‌جاست
 initAuth()
@@ -16,19 +21,23 @@ initAuth()
   <div class="relative flex min-h-dvh flex-col bg-background text-foreground">
     <AppSplash v-if="isNativeApp" />
     <UpdateGate v-if="isNativeApp" />
+    <AppHeader v-if="!isAdminRoute" />
     <Toasts />
-    <!-- content -->
-    <main class="flex-1 pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))] safe-t">
-      <RouterView v-slot="{ Component, route }">
+
+    <main
+      class="flex-1"
+      :class="isAdminRoute ? '' : 'pt-[calc(3.5rem+env(safe-area-inset-top,0px))] pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))]'"
+    >
+      <RouterView v-slot="{ Component, route: activeRoute }">
         <Transition name="page" mode="out-in">
-          <div :key="route.name" class="min-h-[calc(100dvh-4.75rem)]">
+          <div :key="activeRoute.name" class="min-h-full">
             <component :is="Component" />
           </div>
         </Transition>
       </RouterView>
     </main>
 
-    <BottomNav />
+    <BottomNav v-if="!isAdminRoute" />
   </div>
 </template>
 

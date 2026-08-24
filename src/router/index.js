@@ -22,6 +22,18 @@ export const routes = [
     meta: { title: 'حساب', order: 2 },
   },
   {
+    path: '/notifications',
+    name: 'notifications',
+    component: () => import('@/views/NotificationsView.vue'),
+    meta: { title: 'اعلان‌ها' },
+  },
+  {
+    path: '/admin',
+    name: 'admin',
+    component: () => import('@/views/AdminView.vue'),
+    meta: { title: 'پنل مدیریت' },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     redirect: { name: 'home' },
