@@ -75,9 +75,9 @@ export async function fetchNotifications({ silent = false } = {}) {
     if (!response.ok) throw new Error('notifications_failed')
     const data = await response.json()
     const incoming = Array.isArray(data.items) ? data.items : []
-    const byId = new Map(notificationState.items.map((item) => [item.id, item]))
-    for (const item of incoming) byId.set(Number(item.id), item)
-    notificationState.items = [...byId.values()]
+    // Replace the server snapshot instead of merging forever; deleted rows
+    // must disappear from the site and APK on the next poll.
+    notificationState.items = incoming
       .filter((item) => Number.isSafeInteger(Number(item.id)))
       .sort((a, b) => Number(b.id) - Number(a.id))
       .slice(0, 50)

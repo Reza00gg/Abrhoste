@@ -1,6 +1,6 @@
 <script setup>
 import { Bell, CheckCheck, Loader2, RefreshCw } from 'lucide-vue-next'
-import { nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
   fetchNotifications,
   markNotificationRead,
@@ -15,6 +15,7 @@ function formatDate(value) {
   return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
 }
 
+const pageLoading = ref(true)
 let visibleObserver = null
 
 function observeVisibleNotifications() {
@@ -40,7 +41,11 @@ async function refresh() {
 
 onMounted(async () => {
   startNotificationPolling()
+  const startedAt = Date.now()
   await fetchNotifications()
+  const remaining = Math.max(0, 420 - (Date.now() - startedAt))
+  if (remaining) await new Promise((resolve) => window.setTimeout(resolve, remaining))
+  pageLoading.value = false
   await nextTick()
   observeVisibleNotifications()
 })
@@ -59,7 +64,15 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="mx-auto min-h-[calc(100dvh-10.25rem)] w-full max-w-md px-5 pb-10 pt-6">
-    <div v-if="notificationState.loading && !notificationState.loaded" class="flex flex-col items-center py-24 text-white/40">
+    <div v-if="pageLoading" class="flex flex-col items-center py-24 text-white/40">
+      <span class="grid h-12 w-12 place-items-center rounded-2xl bg-[#e11d48]/10 text-[#e11d48]">
+        <Bell class="h-6 w-6" />
+      </span>
+      <Loader2 class="mt-5 h-5 w-5 animate-spin text-white/45" />
+      <p class="mt-3 text-xs">در حال دریافت اعلان‌ها…</p>
+    </div>
+
+    <div v-else-if="notificationState.loading && !notificationState.loaded" class="flex flex-col items-center py-24 text-white/40">
       <Loader2 class="h-7 w-7 animate-spin" />
       <p class="mt-4 text-xs">در حال دریافت اعلان‌ها…</p>
     </div>

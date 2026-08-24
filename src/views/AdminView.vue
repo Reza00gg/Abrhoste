@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { Bell, Edit3, Loader2, LogOut, Megaphone, Send, Trash2, X } from 'lucide-vue-next'
+import { Bell, Edit3, Loader2, LogOut, Megaphone, Plus, Send, Trash2, X } from 'lucide-vue-next'
 import { toast } from '@/lib/toast'
 
 const session = reactive({ checked: false, admin: null })
@@ -213,10 +213,12 @@ onMounted(async () => {
       </header>
 
       <main class="mx-auto w-full max-w-md px-5 pb-10 pt-6">
-        <button v-wave type="button" class="admin-send-card wave-host" @click="openCreate">
-          <span class="admin-send-card__text"><strong>ارسال اعلان</strong><small>برای تمامی کاربران و اپلیکیشن</small></span>
-          <Send class="admin-send-card__icon" />
-        </button>
+        <div class="admin-send-card-wrap">
+          <button v-wave type="button" class="admin-send-card wave-host" @click="openCreate">
+            <Plus class="admin-send-card__icon" />
+            <span class="admin-send-card__text"><strong>ارسال اعلان</strong></span>
+          </button>
+        </div>
 
         <div class="mt-8 flex items-center justify-between">
           <h2 class="text-sm font-bold">اعلان‌های ارسال‌شده</h2>
@@ -358,50 +360,49 @@ onMounted(async () => {
   height: 20px;
 }
 
-.admin-send-card {
-  position: relative;
+.admin-send-card-wrap {
   display: flex;
-  width: 100%;
-  height: 48px;
+  direction: ltr;
+  padding-left: 8px;
+}
+
+.admin-send-card {
+  display: inline-flex;
+  width: auto;
+  min-width: 142px;
+  height: 44px;
   align-items: center;
-  border-radius: 16px;
+  justify-content: flex-start;
+  gap: 8px;
+  border-radius: 13px;
   background: #e11d48;
-  padding: 0 1rem;
-  text-align: right;
+  padding: 0 14px;
+  color: #fff;
+  text-align: left;
 }
 
 .admin-send-card__text {
   display: block;
-  width: 100%;
-  padding-right: 2.25rem;
-}
-
-.admin-send-card__text strong,
-.admin-send-card__text small {
-  display: block;
+  width: auto;
+  padding: 0;
+  direction: rtl;
+  text-align: right;
 }
 
 .admin-send-card__text strong {
+  display: block;
   font-size: 13px;
   font-weight: 800;
   line-height: 1.2;
-}
-
-.admin-send-card__text small {
-  margin-top: 2px;
-  color: rgba(255, 255, 255, .70);
-  font-size: 10px;
-  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .admin-send-card__icon {
-  position: absolute;
-  top: 50%;
-  left: 1rem;
-  width: 17px;
-  height: 17px;
-  transform: translateY(-50%);
-  opacity: .85;
+  position: static;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  opacity: .9;
 }
 
 .admin-notification-card p {
