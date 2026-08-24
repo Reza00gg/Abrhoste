@@ -66,6 +66,9 @@ if [[ -z "${ADMIN_PASSWORD}" ]]; then
   read -r -s -p "Admin password: " ADMIN_PASSWORD
   printf '\n'
 fi
+if [[ -z "${CERTBOT_EMAIL}" && -t 0 ]]; then
+  read -r -p "Certbot email (optional; leave empty for HTTP only): " CERTBOT_EMAIL
+fi
 [[ -n "${DATABASE_URL}" ]] || die "DATABASE_URL cannot be empty."
 [[ -n "${ADMIN_USERNAME}" && -n "${ADMIN_PASSWORD}" ]] || die "Admin credentials cannot be empty."
 [[ "${DOMAIN}" != *'/'* && "${DOMAIN}" != *' '* ]] || die "DOMAIN must be a hostname only."
