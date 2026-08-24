@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AppHeader from '@/components/AppHeader.vue'
+import NotificationHeader from '@/components/NotificationHeader.vue'
 import BottomNav from '@/components/BottomNav.vue'
 import AppSplash from '@/components/AppSplash.vue'
 import UpdateGate from '@/components/UpdateGate.vue'
@@ -12,6 +13,7 @@ import { initAuth } from '@/lib/auth'
 const isNativeApp = !!window.Capacitor?.isNativePlatform?.()
 const route = useRoute()
 const isAdminRoute = computed(() => route.name === 'admin')
+const isNotificationsRoute = computed(() => route.name === 'notifications')
 
 // بازیابی بی‌صدای نشست — برنامه باز شد، حساب همون‌جاست
 initAuth()
@@ -21,7 +23,8 @@ initAuth()
   <div class="relative flex min-h-dvh flex-col bg-background text-foreground">
     <AppSplash v-if="isNativeApp" />
     <UpdateGate v-if="isNativeApp" />
-    <AppHeader v-if="!isAdminRoute" />
+    <AppHeader v-if="!isAdminRoute && !isNotificationsRoute" />
+    <NotificationHeader v-else-if="isNotificationsRoute" />
     <Toasts />
 
     <main

@@ -54,6 +54,7 @@ export async function requireAdmin(req, res) {
   if (!admin) {
     clearAdminCookie(res)
     res.statusCode = 401
+    res.setHeader('Content-Type', 'application/json; charset=utf-8')
     res.end(JSON.stringify({ error: 'unauthorized', message: 'دسترسی مدیر لازم است' }))
     return null
   }

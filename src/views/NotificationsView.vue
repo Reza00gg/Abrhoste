@@ -1,7 +1,13 @@
 <script setup>
-import { ArrowRight, Bell, CheckCheck, Loader2, RefreshCw } from 'lucide-vue-next'
-import { onMounted } from 'vue'
-import { fetchNotifications, markNotificationsRead, notificationState } from '@/lib/notifications'
+import { Bell, CheckCheck, Loader2, RefreshCw } from 'lucide-vue-next'
+import { onBeforeUnmount, onMounted } from 'vue'
+import {
+  fetchNotifications,
+  markNotificationRead,
+  notificationState,
+  startNotificationPolling,
+  stopNotificationPolling,
+} from '@/lib/notifications'
 
 function formatDate(value) {
   const date = new Date(value)
@@ -11,35 +17,18 @@ function formatDate(value) {
 
 async function refresh() {
   await fetchNotifications()
-  markNotificationsRead()
 }
 
 onMounted(async () => {
+  startNotificationPolling()
   await fetchNotifications()
-  markNotificationsRead()
 })
+
+onBeforeUnmount(stopNotificationPolling)
 </script>
 
 <template>
   <section class="mx-auto min-h-[calc(100dvh-10.25rem)] w-full max-w-md px-5 pb-10 pt-6">
-    <div class="mb-6 flex items-center justify-between">
-      <RouterLink
-        v-wave
-        to="/"
-        class="wave-host grid h-10 w-10 place-items-center rounded-xl text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
-        aria-label="بازگشت"
-      >
-        <ArrowRight class="h-5 w-5" />
-      </RouterLink>
-      <div class="text-center">
-        <h1 class="text-lg font-bold text-white">اعلان‌ها</h1>
-        <p class="mt-1 text-[11px] text-white/35">خبرها و اطلاعیه‌های لنو موویز</p>
-      </div>
-      <span class="grid h-10 w-10 place-items-center rounded-xl bg-white/[0.04] text-[#e11d48]">
-        <Bell class="h-5 w-5" />
-      </span>
-    </div>
-
     <div v-if="notificationState.loading && !notificationState.loaded" class="flex flex-col items-center py-24 text-white/40">
       <Loader2 class="h-7 w-7 animate-spin" />
       <p class="mt-4 text-xs">در حال دریافت اعلان‌ها…</p>
@@ -60,16 +49,16 @@ onMounted(async () => {
       <p class="mt-2 text-xs text-white/25">هر اطلاعیهٔ جدید اینجا نمایش داده می‌شود.</p>
     </div>
 
-    <div v-else class="space-y-3">
-      <article v-for="item in notificationState.items" :key="item.id" class="rounded-2xl border border-white/8 bg-white/[0.035] px-4 py-4">
-        <div class="flex items-start gap-3">
-          <span class="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#e11d48]/15 text-[#e11d48]">
-            <Bell class="h-4.5 w-4.5" />
+    <div v-else class="space-y-2.5">
+      <article v-for="item in notificationState.items" :key="item.id" class="rounded-xl border border-white/8 bg-white/[0.035] px-3.5 py-3" @click="markNotificationRead(item.id)">
+        <div class="flex items-start gap-2.5">
+          <span class="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#e11d48]/15 text-[#e11d48]">
+            <Bell class="h-4 w-4" />
           </span>
           <div class="min-w-0 flex-1 text-right">
-            <h2 class="text-sm font-bold leading-6 text-white">{{ item.title }}</h2>
-            <p class="mt-2 whitespace-pre-line text-[13px] leading-7 text-white/60">{{ item.message }}</p>
-            <time class="mt-3 block text-[10px] text-white/30" dir="rtl">{{ formatDate(item.createdAt) }}</time>
+            <h2 class="text-[13px] font-bold leading-5 text-white">{{ item.title }}</h2>
+            <p class="mt-1 whitespace-pre-line text-[12px] leading-6 text-white/60">{{ item.message }}</p>
+            <time class="mt-2 block text-[10px] text-white/30" dir="rtl">{{ formatDate(item.createdAt) }}</time>
           </div>
         </div>
       </article>

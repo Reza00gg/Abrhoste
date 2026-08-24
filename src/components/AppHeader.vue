@@ -24,7 +24,7 @@ onBeforeUnmount(stopNotificationPolling)
     class="fixed inset-x-0 top-0 z-40 border-b border-white/8 bg-black/80 backdrop-blur-xl backdrop-saturate-150"
     :style="{ paddingTop: 'env(safe-area-inset-top, 0px)' }"
   >
-    <div class="relative mx-auto flex h-14 max-w-md items-center justify-center px-4">
+    <div class="relative flex h-14 w-full items-center justify-center px-4" dir="ltr">
       <button
         v-wave
         type="button"
@@ -35,7 +35,7 @@ onBeforeUnmount(stopNotificationPolling)
         <Menu class="h-[22px] w-[22px]" :stroke-width="2" />
       </button>
 
-      <RouterLink to="/" class="select-none text-[16px] font-bold tracking-tight text-white">
+      <RouterLink to="/" class="select-none text-[16px] font-bold tracking-tight text-white" dir="rtl">
         لنوموییز
       </RouterLink>
 
@@ -50,6 +50,7 @@ onBeforeUnmount(stopNotificationPolling)
         <span
           v-if="notificationState.unread > 0"
           class="absolute left-1 top-1 grid min-h-4 min-w-4 place-items-center rounded-full bg-[#e11d48] px-1 text-[9px] font-bold leading-none text-white"
+          dir="rtl"
         >
           {{ notificationState.unread > 99 ? '۹۹+' : notificationState.unread }}
         </span>

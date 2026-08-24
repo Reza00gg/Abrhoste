@@ -1,7 +1,9 @@
 import { reactive } from 'vue'
 import { API_BASE } from '@/lib/api'
 
-const STORAGE_KEY = 'lenumoviz.notifications.lastSeenId'
+const READ_KEY = 'lenumoviz.notifications.readIds'
+const LEGACY_LAST_SEEN_KEY = 'lenumoviz.notifications.lastSeenId'
+const MAX_REMEMBERED_READ = 500
 
 export const notificationState = reactive({
   items: [],
@@ -16,15 +18,51 @@ let pollingTimer = null
 let pollingInFlight = false
 let focusHandler = null
 
-function lastSeenId() {
-  if (typeof window === 'undefined') return 0
-  const value = Number(window.localStorage.getItem(STORAGE_KEY))
-  return Number.isSafeInteger(value) && value > 0 ? value : 0
+function readIds() {
+  if (typeof window === 'undefined') return new Set()
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(READ_KEY) || '[]')
+    return new Set(raw.filter((id) => Number.isSafeInteger(Number(id))).map(Number))
+  } catch {
+    return new Set()
+  }
+}
+
+function saveReadIds(ids) {
+  if (typeof window === 'undefined') return
+  const values = [...ids].sort((a, b) => b - a).slice(0, MAX_REMEMBERED_READ)
+  window.localStorage.setItem(READ_KEY, JSON.stringify(values))
+}
+
+function migrateLegacyReadState(ids) {
+  if (typeof window === 'undefined' || ids.size) return ids
+  const legacy = Number(window.localStorage.getItem(LEGACY_LAST_SEEN_KEY))
+  if (!Number.isSafeInteger(legacy) || legacy < 1) return ids
+  for (const item of notificationState.items) if (Number(item.id) <= legacy) ids.add(Number(item.id))
+  saveReadIds(ids)
+  window.localStorage.removeItem(LEGACY_LAST_SEEN_KEY)
+  return ids
 }
 
 function recalculateUnread() {
-  const seen = lastSeenId()
-  notificationState.unread = notificationState.items.filter((item) => item.id > seen).length
+  const ids = migrateLegacyReadState(readIds())
+  notificationState.unread = notificationState.items.filter((item) => !ids.has(Number(item.id))).length
+}
+
+export function markNotificationRead(id) {
+  const numericId = Number(id)
+  if (!Number.isSafeInteger(numericId) || numericId < 1) return
+  const ids = readIds()
+  ids.add(numericId)
+  saveReadIds(ids)
+  recalculateUnread()
+}
+
+export function markNotificationsRead(idsToMark = notificationState.items.map((item) => item.id)) {
+  const ids = readIds()
+  for (const id of idsToMark) if (Number.isSafeInteger(Number(id))) ids.add(Number(id))
+  saveReadIds(ids)
+  recalculateUnread()
 }
 
 export async function fetchNotifications({ silent = false } = {}) {
@@ -54,24 +92,25 @@ export async function fetchNotifications({ silent = false } = {}) {
   }
 }
 
-export function markNotificationsRead() {
-  if (typeof window === 'undefined') return
-  const latest = notificationState.items[0]?.id || notificationState.latestId || 0
-  if (latest > 0) window.localStorage.setItem(STORAGE_KEY, String(latest))
-  notificationState.unread = 0
-}
-
 export function startNotificationPolling() {
   if (typeof window === 'undefined' || pollingTimer) return
   fetchNotifications({ silent: true })
-  pollingTimer = window.setInterval(() => fetchNotifications({ silent: true }), 15000)
-  focusHandler = () => fetchNotifications({ silent: true })
+  pollingTimer = window.setInterval(() => fetchNotifications({ silent: true }), 5000)
+  focusHandler = () => {
+    if (document.visibilityState !== 'hidden') fetchNotifications({ silent: true })
+  }
   window.addEventListener('focus', focusHandler)
+  document.addEventListener('visibilitychange', focusHandler)
+  window.addEventListener('pageshow', focusHandler)
 }
 
 export function stopNotificationPolling() {
   if (pollingTimer) window.clearInterval(pollingTimer)
-  if (focusHandler) window.removeEventListener('focus', focusHandler)
+  if (focusHandler) {
+    window.removeEventListener('focus', focusHandler)
+    document.removeEventListener('visibilitychange', focusHandler)
+    window.removeEventListener('pageshow', focusHandler)
+  }
   pollingTimer = null
   focusHandler = null
 }

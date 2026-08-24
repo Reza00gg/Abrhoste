@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { Bell, Check, Edit3, Loader2, LogOut, Megaphone, Plus, Send, Trash2, X } from 'lucide-vue-next'
+import { Bell, Edit3, Loader2, LogOut, Megaphone, Send, Trash2, X } from 'lucide-vue-next'
 import { toast } from '@/lib/toast'
 
 const session = reactive({ checked: false, admin: null })
@@ -199,26 +199,23 @@ onMounted(async () => {
     </template>
 
     <template v-else>
-      <header class="border-b border-white/8 bg-black/80 px-5 py-4 backdrop-blur-xl">
-        <div class="mx-auto flex w-full max-w-md items-center justify-between">
-          <button v-wave type="button" class="wave-host grid h-10 w-10 place-items-center rounded-xl text-white/55 hover:bg-white/[0.06] hover:text-white" aria-label="خروج" @click="logout">
+      <header class="border-b border-white/8 bg-black/80 px-5 py-3 backdrop-blur-xl">
+        <div class="relative mx-auto h-10 w-full items-center" dir="ltr">
+          <button v-wave type="button" class="wave-host absolute left-0 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl text-white/55 hover:bg-white/[0.06] hover:text-white" aria-label="خروج" @click="logout">
             <LogOut class="h-5 w-5" />
           </button>
-          <div class="text-center">
+          <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center" dir="rtl">
             <h1 class="text-base font-bold">پنل مدیریت</h1>
             <p class="mt-1 text-[10px] text-white/35">ارسال و مدیریت اعلان‌ها</p>
           </div>
-          <span class="grid h-10 w-10 place-items-center rounded-xl bg-[#e11d48]/15 text-[#e11d48]"><Megaphone class="h-5 w-5" /></span>
+          <span class="absolute right-0 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-xl bg-[#e11d48]/15 text-[#e11d48]" aria-hidden="true"><Megaphone class="h-5 w-5" /></span>
         </div>
       </header>
 
       <main class="mx-auto w-full max-w-md px-5 pb-10 pt-6">
-        <button v-wave type="button" class="wave-host flex h-14 w-full items-center justify-between rounded-2xl bg-[#e11d48] px-5 text-right" @click="openCreate">
-          <span class="flex items-center gap-3">
-            <span class="grid h-9 w-9 place-items-center rounded-xl bg-white/15"><Plus class="h-5 w-5" /></span>
-            <span><strong class="block text-sm">ارسال اعلان</strong><small class="mt-1 block text-[10px] text-white/70">برای تمامی کاربران و اپلیکیشن</small></span>
-          </span>
-          <Send class="h-5 w-5 opacity-80" />
+        <button v-wave type="button" class="wave-host relative flex h-12 w-full items-center rounded-2xl bg-[#e11d48] px-4 text-right" @click="openCreate">
+          <span class="w-full pe-10"><strong class="block text-sm">ارسال اعلان</strong><small class="mt-0.5 block text-[10px] text-white/70">برای تمامی کاربران و اپلیکیشن</small></span>
+          <Send class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 opacity-80" />
         </button>
 
         <div class="mt-8 flex items-center justify-between">
@@ -231,18 +228,18 @@ onMounted(async () => {
           <Bell class="h-9 w-9 text-white/20" />
           <p class="mt-4 text-sm font-bold text-white/45">هنوز اعلانی ارسال نشده</p>
         </div>
-        <div v-else class="mt-4 space-y-3">
-          <article v-for="item in items" :key="item.id" class="rounded-2xl border border-white/8 bg-white/[0.035] p-4">
-            <div class="flex items-start gap-3">
-              <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#e11d48]/15 text-[#e11d48]"><Bell class="h-4.5 w-4.5" /></span>
+        <div v-else class="mt-4 space-y-2">
+          <article v-for="item in items" :key="item.id" class="rounded-xl border border-white/8 bg-white/[0.035] p-3">
+            <div class="flex items-start gap-2.5">
+              <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#e11d48]/15 text-[#e11d48]"><Bell class="h-4 w-4" /></span>
               <div class="min-w-0 flex-1 text-right">
-                <h3 class="text-sm font-bold text-white">{{ item.title }}</h3>
-                <p class="mt-2 whitespace-pre-line text-[12px] leading-6 text-white/55">{{ item.message }}</p>
-                <time class="mt-3 block text-[10px] text-white/30">{{ formatDate(item.createdAt) }}</time>
+                <h3 class="text-[13px] font-bold leading-5 text-white">{{ item.title }}</h3>
+                <p class="mt-1 whitespace-pre-line text-[11px] leading-5 text-white/55">{{ item.message }}</p>
+                <time class="mt-2 block text-[10px] text-white/30">{{ formatDate(item.createdAt) }}</time>
               </div>
-              <div class="flex shrink-0 gap-1">
-                <button v-wave type="button" class="wave-host grid h-8 w-8 place-items-center rounded-lg text-white/40 hover:bg-white/[0.06] hover:text-white" aria-label="ویرایش" @click="openEdit(item)"><Edit3 class="h-4 w-4" /></button>
-                <button v-wave type="button" class="wave-host grid h-8 w-8 place-items-center rounded-lg text-white/40 hover:bg-red-500/10 hover:text-red-400" aria-label="حذف" @click="deleteNotification(item)"><Trash2 class="h-4 w-4" /></button>
+              <div class="flex shrink-0 gap-0.5">
+                <button v-wave type="button" class="wave-host grid h-7 w-7 place-items-center rounded-lg text-white/40 hover:bg-white/[0.06] hover:text-white" aria-label="ویرایش" @click="openEdit(item)"><Edit3 class="h-3.5 w-3.5" /></button>
+                <button v-wave type="button" class="wave-host grid h-7 w-7 place-items-center rounded-lg text-white/40 hover:bg-red-500/10 hover:text-red-400" aria-label="حذف" @click="deleteNotification(item)"><Trash2 class="h-3.5 w-3.5" /></button>
               </div>
             </div>
           </article>
